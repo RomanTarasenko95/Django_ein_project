@@ -2,8 +2,12 @@ from django.http import HttpResponse
 
 
 def hello(request):
-    return HttpResponse("Hello, Romeo")
+    return HttpResponse("Ну привет а теперь поменяй на  bye")
 
 
-def hello2(request):
-    return HttpResponse("Hello, Romeo2")
+def bye(request):
+    return HttpResponse("Все, Прощай (>_<)")
+
+
+def home(request):
+    return HttpResponse("Привет! добавь hello в строку ")
