@@ -6,7 +6,7 @@ def hello(request):
 
 
 def bye(request):
-    return HttpResponse("Все, Прощай (>_<)")
+    return HttpResponse("Все, Прощай (>_<) можешь еще ввести admin если ты админ конечно)")
 
 
 def home(request):
