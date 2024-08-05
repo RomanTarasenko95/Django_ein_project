@@ -7,6 +7,7 @@ class TaskAdmin(admin.ModelAdmin):
     list_display = ('title', 'status', 'deadline', 'created_at')
     search_fields = ('title', 'description')
     list_filter = ('status', 'created_at', 'deadline')
+    filter_horizontal = ('categories',)
 
 
 @admin.register(SubTask)
