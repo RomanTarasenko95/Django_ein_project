@@ -1,45 +1,82 @@
 from time import timezone
 
-from django.http import HttpResponse
+from django.db.models import Count
+from django.http import HttpResponse, Http404
 from rest_framework import generics
-from .models import Task
-from .serializers import TaskSerializer
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import OrderingFilter
-from rest_framework.pagination import PageNumberPagination
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.db.models import Count, Q
-from .models import Task
-from django.utils import timezone
+from .models import Task, SubTask
+from .serializers import TaskCreateSerializer, TaskDetailSerializer, SubTaskCreateSerializer
+
+
+class SubTaskListCreateView(APIView):
+    def get(self, request):
+        subtasks = SubTask.objects.all()
+        serializer = SubTaskCreateSerializer(subtasks, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = SubTaskCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SubTaskDetailUpdateDeleteView(APIView):
+    def get_object(self, pk):
+        try:
+            return SubTask.objects.get(pk=pk)
+        except SubTask.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk):
+        subtask = self.get_object(pk)
+        serializer = SubTaskCreateSerializer(subtask)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        subtask = self.get_object(pk)
+        serializer = SubTaskCreateSerializer(subtask, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        subtask = self.get_object(pk)
+        subtask.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class TaskCreateView(APIView):
+    def post(self, request):
+        serializer = TaskCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TaskListView(APIView):
+    def get(self, request):
+        tasks = Task.objects.all()
+        serializer = TaskDetailSerializer(tasks, many=True)
+        return Response(serializer.data)
 
 
 class TaskStatsView(APIView):
     def get(self, request):
         total_tasks = Task.objects.count()
-        status_counts = Task.objects.values('status').annotate(count=Count('status'))
+        tasks_by_status = Task.objects.values('status').annotate(count=Count('status'))
         overdue_tasks = Task.objects.filter(deadline__lt=timezone.now()).count()
-
-        stats = {
+        data = {
             'total_tasks': total_tasks,
-            'status_counts': status_counts,
-            'overdue_tasks': overdue_tasks,
+            'tasks_by_status': list(tasks_by_status),
+            'overdue_tasks': overdue_tasks
         }
-        return Response(stats)
-
-
-class TaskListView(generics.ListAPIView):
-    queryset = Task.objects.all()
-    serializer_class = TaskSerializer
-    filter_backends = [DjangoFilterBackend, OrderingFilter]
-    filterset_fields = ['status', 'deadline']
-    ordering_fields = ['deadline', 'status']
-    pagination_class = PageNumberPagination
-
-
-class TaskCreateView(generics.CreateAPIView):
-    queryset = Task.objects.all()
-    serializer_class = TaskSerializer
+        return Response(data)
 
 
 def hello(request):
