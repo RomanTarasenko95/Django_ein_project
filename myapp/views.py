@@ -1,72 +1,28 @@
-from time import timezone
-
+from django.utils import timezone
 from django.db.models import Count
-from django.http import HttpResponse, Http404
-from rest_framework import generics
-from rest_framework import status
-from rest_framework.views import APIView
+from rest_framework import generics, filters, status
 from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
 from .models import Task, SubTask
-from .serializers import TaskCreateSerializer, TaskDetailSerializer, SubTaskCreateSerializer
+from .serializers import TaskDetailSerializer, SubTaskCreateSerializer
+from .pagination import CustomPagination
+
+class TaskListCreateView(generics.ListCreateAPIView):
+    queryset = Task.objects.all()
+    serializer_class = TaskDetailSerializer
+    pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['status', 'deadline']
+    search_fields = ['title', 'description']
+    ordering_fields = ['created_at']
 
 
-class SubTaskListCreateView(APIView):
-    def get(self, request):
-        subtasks = SubTask.objects.all()
-        serializer = SubTaskCreateSerializer(subtasks, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = SubTaskCreateSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class TaskRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Task.objects.all()
+    serializer_class = TaskDetailSerializer
 
 
-class SubTaskDetailUpdateDeleteView(APIView):
-    def get_object(self, pk):
-        try:
-            return SubTask.objects.get(pk=pk)
-        except SubTask.DoesNotExist:
-            raise Http404
-
-    def get(self, request, pk):
-        subtask = self.get_object(pk)
-        serializer = SubTaskCreateSerializer(subtask)
-        return Response(serializer.data)
-
-    def put(self, request, pk):
-        subtask = self.get_object(pk)
-        serializer = SubTaskCreateSerializer(subtask, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk):
-        subtask = self.get_object(pk)
-        subtask.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class TaskCreateView(APIView):
-    def post(self, request):
-        serializer = TaskCreateSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class TaskListView(APIView):
-    def get(self, request):
-        tasks = Task.objects.all()
-        serializer = TaskDetailSerializer(tasks, many=True)
-        return Response(serializer.data)
-
-
-class TaskStatsView(APIView):
+class TaskStatsView(generics.GenericAPIView):
     def get(self, request):
         total_tasks = Task.objects.count()
         tasks_by_status = Task.objects.values('status').annotate(count=Count('status'))
@@ -78,9 +34,26 @@ class TaskStatsView(APIView):
         }
         return Response(data)
 
+class SubTaskListCreateView(generics.ListCreateAPIView):
+    queryset = SubTask.objects.all()
+    serializer_class = SubTaskCreateSerializer
+    pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['status', 'deadline']
+    search_fields = ['title', 'description']
+    ordering_fields = ['created_at']
+
+
+class SubTaskRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = SubTask.objects.all()
+    serializer_class = SubTaskCreateSerializer
+
+
+from django.http import HttpResponse
+
 
 def hello(request):
-    return HttpResponse("Ну привет а теперь поменяй на  bye")
+    return HttpResponse("Ну привет а теперь поменяй на bye")
 
 
 def bye(request):
