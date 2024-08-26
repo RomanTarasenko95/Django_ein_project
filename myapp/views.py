@@ -1,11 +1,27 @@
 from django.utils import timezone
 from django.db.models import Count
-from rest_framework import generics, filters, status
-from rest_framework.response import Response
+from rest_framework import generics, filters
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Task, SubTask
+from .models import SubTask
 from .serializers import TaskDetailSerializer, SubTaskCreateSerializer
 from .pagination import CustomPagination
+from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from .models import Category, Task
+from .serializers import CategorySerializer
+
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+    @action(detail=True, methods=['get'])
+    def count_tasks(self, request, pk=None):
+        category = self.get_object()
+        task_count = Task.objects.filter(category=category).count()
+        return Response({'task_count': task_count})
+
 
 class TaskListCreateView(generics.ListCreateAPIView):
     queryset = Task.objects.all()
@@ -33,6 +49,7 @@ class TaskStatsView(generics.GenericAPIView):
             'overdue_tasks': overdue_tasks
         }
         return Response(data)
+
 
 class SubTaskListCreateView(generics.ListCreateAPIView):
     queryset = SubTask.objects.all()

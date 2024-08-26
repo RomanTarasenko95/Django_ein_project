@@ -51,7 +51,7 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ],
     'DEFAULT_PAGINATION_CLASS': 'myapp.pagination.CustomPagination',
-    'PAGE_SIZE': 10,
+    'PAGE_SIZE': 5,
 }
 
 ROOT_URLCONF = 'config.urls'
