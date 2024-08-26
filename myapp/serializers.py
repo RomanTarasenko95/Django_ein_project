@@ -3,6 +3,12 @@ from rest_framework import serializers
 from .models import Task, SubTask, Category
 
 
+class TaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Task
+        fields = '__all__'
+
+
 class SubTaskCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubTask
@@ -37,3 +43,4 @@ class TaskCreateSerializer(serializers.ModelSerializer):
         if value < timezone.now():
             raise serializers.ValidationError("Deadline cannot be in the past.")
         return value
+
